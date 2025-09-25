@@ -18,8 +18,8 @@ export const goodsFromServer = [
 
 const Good = ({ goods }) => (
   <ul>
-    {goods.map((good, index) => (
-      <li data-cy="Good" key={index}>
+    {goods.map(good => (
+      <li data-cy="Good" key={good}>
         {good}
       </li>
     ))}
@@ -27,28 +27,47 @@ const Good = ({ goods }) => (
 );
 
 export const App = () => {
-  const [sorted, setSorted] = useState(goodsFromServer);
-  const [sortMode, setSortMode] = useState(null);
+  const [sortMode, setSortMode] = useState(null); // 'alphabetical' | 'length' | null
+  const [isReversed, setIsReversed] = useState(false);
+
+  // derive displayed goods from goodsFromServer, sortMode, and isReversed
+  const displayedGoods = (() => {
+    const goods = [...goodsFromServer];
+
+    if (sortMode === 'alphabetical') {
+      goods.sort((a, b) => a.localeCompare(b));
+    } else if (sortMode === 'length') {
+      goods.sort((a, b) => a.length - b.length);
+    }
+
+    if (isReversed) {
+      goods.reverse();
+    }
+
+    return goods;
+  })();
 
   const sortAlphabetically = () => {
-    setSorted([...sorted].sort((good1, good2) => good1.localeCompare(good2)));
     setSortMode('alphabetical');
   };
 
   const sortByLength = () => {
-    setSorted([...sorted].sort((good1, good2) => good1.length - good2.length));
     setSortMode('length');
   };
 
-  const reset = () => {
-    setSorted(goodsFromServer);
-    setSortMode(null);
+  const toggleReverse = () => {
+    setIsReversed(prev => !prev);
   };
 
-  const reverse = () => {
-    setSorted([...sorted].reverse());
-    setSortMode('reversed');
+  const reset = () => {
+    setSortMode(null);
+    setIsReversed(false);
   };
+
+  // check if displayedGoods differs from original order
+  const isResetVisible = displayedGoods.some(
+    (good, index) => good !== goodsFromServer[index],
+  );
 
   return (
     <div className="section content">
@@ -75,23 +94,24 @@ export const App = () => {
 
         <button
           type="button"
-          className={cn('button', 'is-info', {
-            'is-light': sortMode !== 'reversed',
-          })}
-          onClick={reverse}
+          className={cn('button', 'is-info', { 'is-light': !isReversed })}
+          onClick={toggleReverse}
         >
           Reverse
         </button>
 
-        <button
-          type="button"
-          className="button is-info is-light"
-          onClick={reset}
-        >
-          Reset
-        </button>
+        {isResetVisible && (
+          <button
+            type="button"
+            className="button is-info is-light"
+            onClick={reset}
+          >
+            Reset
+          </button>
+        )}
       </div>
-      <Good goods={sorted} />
+
+      <Good goods={displayedGoods} />
     </div>
   );
 };
